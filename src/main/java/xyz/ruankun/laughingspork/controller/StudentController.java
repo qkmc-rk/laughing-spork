@@ -6,6 +6,9 @@ import io.swagger.annotations.ApiImplicitParams;
 import io.swagger.annotations.ApiOperation;
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.authz.annotation.RequiresRoles;
+import org.apache.shiro.subject.PrincipalCollection;
+import org.apache.shiro.subject.SimplePrincipalCollection;
+import org.apache.shiro.subject.Subject;
 import org.jodconverter.DocumentConverter;
 import org.jodconverter.office.LocalOfficeManager;
 import org.jodconverter.office.OfficeException;
@@ -86,7 +89,8 @@ public class StudentController {
     public ResponseVO changeSelfInfo(@RequestParam String phone, @RequestParam String wechat
             , @RequestParam String qq, @RequestParam Integer age, @RequestParam String corpTeacherNo) {
 
-        SxStudent sxStudent  = (SxStudent) SecurityUtils.getSubject().getPrincipal();
+        Subject subject = SecurityUtils.getSubject();
+        SxStudent sxStudent = (SxStudent) subject.getPrincipal();
         SxStudent sxStudent1 = new SxStudent();
         sxStudent1.setPhone(phone);
         sxStudent1.setWechat(wechat);
@@ -96,10 +100,15 @@ public class StudentController {
         EntityUtil.update(sxStudent1, sxStudent);
         logger.info("sxStudent未更新前: " + sxStudent.toString());
         logger.info("sxStudent即将被更新: " + sxStudent1.toString());
-        try{
+        try {
+            PrincipalCollection principalCollection = subject.getPrincipals();
+            String realmName = principalCollection.getRealmNames().iterator().next();
+            PrincipalCollection newPrincipalCollection =
+                    new SimplePrincipalCollection(sxStudent1, realmName);
+            subject.runAs(newPrincipalCollection);
             sxStudentService.save(sxStudent1);
             return ControllerUtil.getSuccessResultBySelf(sxStudent1);
-        }catch (Exception e){
+        } catch (Exception e) {
             return ControllerUtil.getFalseResultMsgBySelf("更新出错：" + e.getMessage());
         }
     }
@@ -242,7 +251,7 @@ public class StudentController {
         params.put("${corp_teacher_score}", sxIdentifyForm.getCorpTeacherScore());
         String wordFileName = RenderWordUtil.exportWordToResponse("identify", sxStudent.getStuNo(), params);
         if (wordFileName != null) {
-            String path = System.getProperty("user.dir") + (SystemUtil.isWindows()?"\\static\\":"/static/");
+            String path = System.getProperty("user.dir") + (SystemUtil.isWindows() ? "\\static\\" : "/static/");
             String pdfFileName = wordFileName.replace("docx", "pdf");
             // 源文件 （office）
             File source = new File(path + wordFileName);
@@ -297,7 +306,7 @@ public class StudentController {
         String wordFileName = RenderWordUtil.exportWordToResponse("report", sxStudent.getStuNo(), params);
         if (wordFileName != null) {
 
-            String path = System.getProperty("user.dir") + (SystemUtil.isWindows()?"\\static\\":"/static/");
+            String path = System.getProperty("user.dir") + (SystemUtil.isWindows() ? "\\static\\" : "/static/");
             String pdfFileName = wordFileName.replace("docx", "pdf");
             // 源文件 （office）
             File source = new File(path + wordFileName);
@@ -355,12 +364,10 @@ public class StudentController {
             if (sxCorporation.getId() == null || sxCorporation.getId().equals("")) {
                 return ControllerUtil.getFalseResultMsgBySelf("修改企业信息缺少ID");
             }
-            if (oldCorp.getId() != sxCorporation.getId()) {
+            if (!oldCorp.getId().equals(sxCorporation.getId())) {
                 return ControllerUtil.getFalseResultMsgBySelf(RespCode.MSG_NOT_FOUND_DATA);
             }
-            EntityUtil.update(sxCorporation,oldCorp);
-            System.out.println(oldCorp.toString());
-            System.out.println(sxCorporation.toString());
+            EntityUtil.update(sxCorporation, oldCorp);
         }
 
         sxCorporation.setStuNo(sxStudent.getStuNo());
@@ -385,9 +392,19 @@ public class StudentController {
     @RequiresRoles(RoleCode.STUDENT)
     @PostMapping("/student/position")
     public ResponseVO setPosition(String position) {
-        SxStudent sxStudent = (SxStudent) SecurityUtils.getSubject().getPrincipal();
+        Subject subject = SecurityUtils.getSubject();
+        SxStudent sxStudent = (SxStudent) subject.getPrincipal();
+
         sxStudentService.updatePosition(sxStudent.getStuNo(), position);
-        return ControllerUtil.getSuccessResultBySelf(sxStudentService.findByStuNo(sxStudent.getStuNo()));
+        SxStudent newStudent = sxStudentService.findByStuNo(sxStudent.getStuNo());
+
+        PrincipalCollection principalCollection = subject.getPrincipals();
+        String realmName = principalCollection.getRealmNames().iterator().next();
+        PrincipalCollection newPrincipalCollection =
+                new SimplePrincipalCollection(newStudent, realmName);
+        subject.runAs(newPrincipalCollection);
+
+        return ControllerUtil.getSuccessResultBySelf(newStudent);
     }
 
     @ApiOperation(value = "学生修改密码", httpMethod = "POST")
@@ -399,7 +416,7 @@ public class StudentController {
     @PostMapping("/student/password")
     public ResponseVO setPassword(String oldPassword, String newPassword) {
         String msg = null;
-        if ((msg = StrongPwdValidator.validate(newPassword).get(false))!= null){
+        if ((msg = StrongPwdValidator.validate(newPassword).get(false)) != null) {
             return ControllerUtil.getFalseResultMsgBySelf(msg);
         }
         SxStudent sxStudent = (SxStudent) SecurityUtils.getSubject().getPrincipal();
@@ -425,7 +442,9 @@ public class StudentController {
             return ControllerUtil.getFalseResultMsgBySelf(RespCode.MSG_VALIDATION_ERROR);
         }
         SxStudent sxStudent = sxStudentService.findSelfInfoByStuNo(stdNo);
-        if(sxStudent==null){return ControllerUtil.getFalseResultMsgBySelf(RespCode.MSG_VALIDATION_ERROR);}
+        if (sxStudent == null) {
+            return ControllerUtil.getFalseResultMsgBySelf(RespCode.MSG_VALIDATION_ERROR);
+        }
         SxReport sxReport = sxReportService.getReportInfo(sxStudent.getStuNo());
         SxTeacher sxTeacher = sxTeacherService.findByTeacherNo(sxStudent.getTeacherNo());
         EntityUtil.setNullFiledToString(sxStudent);

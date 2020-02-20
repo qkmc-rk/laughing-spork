@@ -188,7 +188,7 @@ public class UserController {
 
     }
 
-    @ApiOperation(value = "注册,只有第一次登录才具有注册功能", httpMethod = "GET")
+    @ApiOperation(value = "注册,只有第一次登录才具有注册功能", httpMethod = "POST")
     @PostMapping("/register")
     public ResponseVO register(@RequestParam String account
             , @RequestParam String password
@@ -204,7 +204,7 @@ public class UserController {
             return ControllerUtil.getFalseResultMsgBySelf("验证码输入错误，请刷新后重试");
         }else {
             //先对密码进行校验,不合法的弱密码无法通过注册
-            Map<Boolean, String> rs = StrongPwdValidator.validate(password);
+            Map<Boolean, String> rs = EasyPwdValidator.validate(password);
             if (null != rs.get(false)){
                 return ControllerUtil.getFalseResultMsgBySelf(rs.get(false));
             }
@@ -274,7 +274,7 @@ public class UserController {
     @PostMapping("/password")
     @ApiOperation("修改密码")
     public ResponseVO changePassword(String account, String type, String idCard,String password){
-        Map<Boolean, String> rs = StrongPwdValidator.validate(password);
+        Map<Boolean, String> rs = EasyPwdValidator.validate(password);
         if (null != rs.get(false)){
             return ControllerUtil.getFalseResultMsgBySelf(rs.get(false));
         }
