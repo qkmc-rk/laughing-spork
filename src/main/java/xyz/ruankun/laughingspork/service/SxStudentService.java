@@ -66,9 +66,9 @@ public interface SxStudentService {
      * @param stage1Summary :
      * @return: xyz.ruankun.laughingspork.entity.SxReport
      */
-    SxReport setStage1Summary(/*Date gmtStart,*/ SxStudent sxStudent, String stage1Summary, String stage1GuideWay, String stage1GuideDate);
+    SxReport setStage1Summary(Date stage1Date,Date gmtStart ,SxStudent sxStudent, String stage1Summary, String stage1GuideWay, String stage1GuideDate);
 
-    SxReport setStage2Summary(/*Date gmtEnd, */SxStudent sxStudent, String stage2Summary, String stage2GuideWay, String stage2GuideDate);
+    SxReport setStage2Summary(Date stage2Date,Date gmtEnd,SxStudent sxStudent, String stage2Summary, String stage2GuideWay, String stage2GuideDate);
 
     void save(SxStudent sxStudent);
 

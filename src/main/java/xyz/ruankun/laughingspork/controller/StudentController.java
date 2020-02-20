@@ -162,6 +162,7 @@ public class StudentController {
 
     @ApiOperation(value = "学生填写报告第一阶段信息", httpMethod = "POST")
     @ApiImplicitParams({
+            @ApiImplicitParam(name = "stage1date", value = "第一阶段填写时间", required = true),
             @ApiImplicitParam(name = "gmtStart", value = "实习开始时间", required = true),
             @ApiImplicitParam(name = "stage1Summary", value = "自我总结", required = true),
             @ApiImplicitParam(name = "stage1GuideWay", value = "指导方式", required = true),
@@ -170,12 +171,12 @@ public class StudentController {
     })
     @RequiresRoles(RoleCode.STUDENT)
     @PostMapping("/report/stage1")
-    public ResponseVO stage1Summary(/*Date gmtStart,*/ String stage1Summary, String stage1GuideWay, String stage1GuideDate) {
-        if (stage1Summary == null/* || gmtStart == null*/) {
+    public ResponseVO stage1Summary(Date stage1date, Date gmtStart, String stage1Summary, String stage1GuideWay, String stage1GuideDate) {
+        if (stage1Summary == null || stage1date == null) {
             return ControllerUtil.getFalseResultMsgBySelf(RespCode.MSG_INCOMPLETE_DATA);
         } else {
             //保存鉴定表内容到数据库
-            SxReport sxReport = sxStudentService.setStage1Summary(/*gmtStart,*/ (SxStudent) SecurityUtils.getSubject().getPrincipal(), stage1Summary, stage1GuideWay, stage1GuideDate);
+            SxReport sxReport = sxStudentService.setStage1Summary(stage1date,gmtStart,(SxStudent) SecurityUtils.getSubject().getPrincipal(), stage1Summary, stage1GuideWay, stage1GuideDate);
             if (sxReport == null) {
                 return ControllerUtil.getFalseResultMsgBySelf(RespCode.MSG_STAGE_ERROR);
             }
@@ -185,7 +186,9 @@ public class StudentController {
 
     @ApiOperation(value = "学生填写报告第二阶段信息", httpMethod = "POST")
     @ApiImplicitParams({
+
             @ApiImplicitParam(name = "gmtEnd", value = "实习结束时间", required = true),
+            @ApiImplicitParam(name = "stage2date", value = "第二阶段填写时间", required = true),
             @ApiImplicitParam(name = "stage2Summary", value = "自我总结", required = true),
             @ApiImplicitParam(name = "stage2GuideWay", value = "指导方式", required = true),
             @ApiImplicitParam(name = "stage2GuideDate", value = "指导时间,为字符串，可能是一个时间段", required = true),
@@ -193,7 +196,7 @@ public class StudentController {
     })
     @RequiresRoles(RoleCode.STUDENT)
     @PostMapping("/report/stage2")
-    public ResponseVO stage2Summary(/*Date gmtEnd,*/ String stage2Summary, String stage2GuideWay, String stage2GuideDate) {
+    public ResponseVO stage2Summary(Date stage2Date,Date gmtEnd, String stage2Summary, String stage2GuideWay, String stage2GuideDate) {
         if (stage2Summary == null/* || gmtEnd == null*/) {
             return ControllerUtil.getFalseResultMsgBySelf(RespCode.MSG_INCOMPLETE_DATA);
         } else {
@@ -203,7 +206,7 @@ public class StudentController {
             sxTeacherService.isIdentifyFlag(sxStudent);
             sxTeacherService.isReportFlag(sxStudent);
             //保存鉴定表内容到数据库
-            SxReport sxReport = sxStudentService.setStage2Summary(/*gmtEnd, */sxStudent, stage2Summary, stage2GuideWay, stage2GuideDate);
+            SxReport sxReport = sxStudentService.setStage2Summary(stage2Date,gmtEnd,sxStudent, stage2Summary, stage2GuideWay, stage2GuideDate);
             if (sxReport == null) {
                 return ControllerUtil.getFalseResultMsgBySelf(RespCode.MSG_STAGE_ERROR);
             }
